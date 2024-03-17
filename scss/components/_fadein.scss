@@ -1,0 +1,22 @@
+.zero-vis {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.fade-in {
+    visibility: visible;
+    opacity: 1;
+    animation-name: fadeInOpactity;
+    animation-iteration-count: 1;
+    animation-timing-function: easy-in;
+    animation-duration: 1.5s;
+}
+
+@keyframes fadeInOpactity {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
