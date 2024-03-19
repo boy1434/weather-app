@@ -1,5 +1,11 @@
-import { setLocationObject, getHomeLocation } from "./dataFunctions.js";
-import { addSpinner, displayError } from "./domFunctions.js";
+import { setLocationObject, getHomeLocation, cleanText } from "./dataFunctions.js";
+import { 
+    setPlaceholderText,
+    addSpinner, 
+    displayError,
+    updateScreenReaderConfirmation,
+    displayApiError
+    } from "./domFunctions.js";
 import CurrentLocation from "./CurrentLocation.js";
 const currentLoc = new CurrentLocation();
 
@@ -8,7 +14,15 @@ const initApp = () => {
     geoButton.addEventListener("click", getGeoWeather);
     const homeButton = document.getElementById("home");
     homeButton.addEventListener("click", loadWeather);
-
+    const saveButton = document.getElementById("saveLocation");
+    saveButton.addEventListener("click", savedLocation);
+    const unitButton = document.getElementById("unit");
+    unitButton.addEventListener("click", setUnitPref);
+    const refreshButton = document.getElementById("refresh");
+    refreshButton.addEventListener("click", refreshWeather);
+    const locationEntry = document.getElementById("searchBar__form");
+    locationEntry.addEventListener("submit", submitNewLocation);
+    setPlaceholderText();
     loadWeather();
 }
 
@@ -66,8 +80,55 @@ const displayHomeLocationWeather = (home) => {
             name: locationJson.name,
             unit: locationJson.unit
         };
-        setLocationObject(current, myCoordsObj);
+        setLocationObject(currentLoc, myCoordsObj);
         updateDataAndDisplay(currentLoc);
+    }
+}
+// 위치 저장 버튼
+const savedLocation = () => {
+    if (currentLoc.getLat() && currentLoc.getLon()) {
+        const saveIcon = document.querySelector(".fa-save");
+        addSpinner(saveIcon);
+        const location = {
+            name: currentLoc.getName(),
+            lat: currentLoc.getLat(),
+            lon: currentLoc.getLat(),
+            unit: currentLoc.getUnit()
+        };
+        localStorage.setItem("defaultWeatherLocation", JSON.stringify(location));
+        updateScreenReaderConfirmation(
+            `저장된 위치는 :${currentLoc.getName()}`
+            );
+    }
+}
+
+const setUnitPref = () => {
+    const unitIcon = document.querySelector(".fa-chart-bar");
+    addSpinner(unitIcon);
+    currentLoc.toggleUnit();
+    updateDataAndDisplay(currentLoc);
+}
+// 새로고침 버튼
+const refreshWeather = () => {
+    const refreshIcon = document.querySelector(".fa-sync-alt");
+    addSpinner(refreshIcon);
+    updateDataAndDisplay(currentLoc);
+}
+
+const submitNewLocation = async (e) => {
+    e.preventDefault();
+    const text = document.getElementById("searchBar__text").value;
+    const entryText = cleanText(text);
+    if(!entryText.length) return;
+    const locationIcon = document.querySelector(".fa-search");
+    addSpinner(locationIcon);
+    const coordsData = await getCoordsFromApi(entryText, currentLoc.getUnit());
+    if (coordsData.cod === 200) {
+        const myCoordsObj = {};
+        setLocationObject(currentLoc, myCoordsObj);
+        updateDataAndDisplay(currentLoc);
+    } else {
+        displayApiError(coordsData);
     }
 }
 
